@@ -12,7 +12,7 @@
 ✔️ **Path Traversal Attacks**  
 ✔️ **Cross Site Scripting (XSS)**
 
-Originally developed by **Ebrahim Hegazy**, this tool was written when he started learning Python. Now, it has been **updated to support Python 3**, featuring improved payloads and security mechanisms.  
+this tool was written when i started learning Python. Now, it has been **updated to support Python 3**, featuring improved payloads and security mechanisms.  
 
 ---
 

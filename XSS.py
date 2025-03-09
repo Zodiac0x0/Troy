@@ -32,10 +32,10 @@ def test_url(test_url, payload_patterns):
     try:
         response = requests.get(test_url, timeout=5)
         if response.status_code == 200 and check_xss(response, payload_patterns):
-            logging.warning(f"[*] Possible XSS Vulnerability Found!")
-            logging.warning(f"[*] POC: {test_url}")
+            logging.warning(ga.red + "[*] Possible XSS Vulnerability Found!" + ga.end)
+            logging.warning(ga.red + f"[*] POC: {test_url}" + ga.end)
     except requests.RequestException as e:
-        logging.error(f"[!] Request failed for {test_url}: {e}")
+        logging.error(ga.red + f"[!] Request failed for {test_url}: {e}" + ga.end)
 
 # Main XSS scanning function
 def xss_scan(url, payloads_file):
@@ -97,5 +97,3 @@ args = parser.parse_args()
 
 # Run the scanner with the provided URL and payloads file
 xss_scan(args.url, args.payloads)  # Fixed typo: args.payloads, not args.payload
-
-
