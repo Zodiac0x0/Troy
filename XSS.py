@@ -33,7 +33,7 @@ def test_url(test_url, payload_patterns):
         response = requests.get(test_url, timeout=5)
         if response.status_code == 200 and check_xss(response, payload_patterns):
             logging.warning(ga.red + "[*] Possible XSS Vulnerability Found!" + ga.end)
-            logging.warning(ga.red + f"[*] POC: {test_url}" + ga.end)
+            logging.warning(ga.blue + f"[*] POC: {test_url}" + ga.end)
     except requests.RequestException as e:
         logging.error(ga.red + f"[!] Request failed for {test_url}: {e}" + ga.end)
 

@@ -2,6 +2,7 @@ import requests
 import re
 from headers import *
 
+
 def main_function(url, payloads, check):
     print(ga.blue + " [!] Sending requests with payloads..." + ga.end)
     vuln = 0
