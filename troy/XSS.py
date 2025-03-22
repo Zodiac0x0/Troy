@@ -1,75 +1,75 @@
+# troy/XSS.py
 import re
 import logging
-from filetool.Troy.troy.headers import *
 import requests
 import urllib.parse
+from .headers import *  # Relative import
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Configure logging 
+# Logging Configuration
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] - [%(levelname)s] - %(message)s',
     handlers=[logging.StreamHandler(), logging.FileHandler('xss_scan.log')]
 )
 
-# Precompile regex patterns once for all payloads
 def load_payloads(payloads_file):
-    with open(payloads_file, 'r') as f:
-        payloads = [line.strip() for line in f if line.strip()]
-    return payloads, [re.compile(re.escape(payload), re.I) for payload in payloads]
+    try:
+        with open(payloads_file, 'r') as f:
+            payloads = [line.strip() for line in f if line.strip()]
+        if not payloads:
+            raise ValueError("Payload file is empty")
+        return payloads
+    except FileNotFoundError:
+        logging.error(ga.red + f"[!] Payloads file '{payloads_file}' not found!" + ga.end)
+        return []
+    except ValueError as e:
+        logging.error(ga.red + f"[!] {str(e)}" + ga.end)
+        return []
 
-# Check for XSS in response
-def check_xss(response, payload_patterns):
-    content = response.text
-    for pattern in payload_patterns:
-        if pattern.search(content):
-            return True
-    return False
-
-# Test a single URL for XSS
-def test_url(test_url, payload_patterns):
+def test_url(test_url, payload):
     try:
         response = requests.get(test_url, timeout=5)
-        if response.status_code == 200 and check_xss(response, payload_patterns):
-            logging.warning(ga.red + "[*] Possible XSS Vulnerability Found!" + ga.end)
-            logging.warning(ga.blue + f"[*] POC: {test_url}" + ga.end)
+        if response.status_code == 200:
+            content = response.text.lower()
+            payload_lower = payload.lower()
+            if payload_lower in content or re.search(r"(alert|onerror|script)", content, re.I):
+                logging.warning(ga.red + "[*] Possible XSS Vulnerability Found!" + ga.end)
+                logging.warning(ga.blue + f"[*] Payload: {payload}" + ga.end)
+                logging.warning(ga.blue + f"[*] POC: {test_url}" + ga.end)
+                return True
+        return False
     except requests.RequestException as e:
         logging.error(ga.red + f"[!] Request failed for {test_url}: {e}" + ga.end)
+        return False
 
-# Main XSS scanning function
-def xss_scan(url, payloads_file):
-    logging.info(ga.yellow + "[!] Starting XSS scan..."+ ga.end)
+def xss_scan(url, payloads_file, threads=10):
+    logging.info(ga.yellow + "[!] Starting XSS scan..." + ga.end)
 
-    try:
-        # Load and cache payloads once
-        payloads, payload_patterns = load_payloads(payloads_file)
+    payloads = load_payloads(payloads_file)
+    if not payloads:
+        return
 
-        # Parse URL once
-        parsed_url = urllib.parse.urlparse(url)
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
-        params = urllib.parse.parse_qs(parsed_url.query)
+    parsed_url = urllib.parse.urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+    params = urllib.parse.parse_qs(parsed_url.query)
 
-        if not params:
-            logging.warning(ga.red+ "[!] No query parameters found in URL."+ ga.end)
-            return
+    if not params:
+        logging.warning(ga.red + "[!] No query parameters found in URL." + ga.end)
+        return
 
-        # Test URLs concurrently
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = []
-            for param_name in params.keys():
-                for payload in payloads:
-                    test_params = {k: v for k, v in params.items()}
-                    test_params[param_name] = payload
-                    test_url = base_url + "?" + urllib.parse.urlencode(test_params, doseq=True)
-                    futures.append(executor.submit(test_url, test_url, payload_patterns))
+    vuln_count = 0
+    with ThreadPoolExecutor(max_workers=threads) as executor:
+        futures = []
+        for param_name in params.keys():
+            for payload in payloads:
+                test_params = {k: v for k, v in params.items()}
+                test_params[param_name] = payload
+                test_url = base_url + "?" + urllib.parse.urlencode(test_params, doseq=True)
+                futures.append(executor.submit(test_url, test_url, payload))
 
-            # Process results as they complete
-            for future in as_completed(futures):
-                future.result()  # Exceptions are raised here if any
+        for future in as_completed(futures):
+            if future.result():
+                vuln_count += 1
 
-        logging.info(ga.yellow + "[!] Scan complete. Check log for results." + ga.end)
-
-    except FileNotFoundError:
-        logging.error(ga.red + f"[!] Payloads file '{payloads_file}' not found!"+ ga.end)
-    except Exception as e:
-        logging.error(ga.red + f"[!] Unexpected error: {e}"+ ga.end)
+    logging.info(ga.green + f"[!] XSS scan complete. Found {vuln_count} potential vulnerabilities." + ga.end)

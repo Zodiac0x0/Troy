@@ -1,6 +1,7 @@
-from Troy.troy.headers import *
+# troy/path_traversal.py
 import logging
 import requests
+from .headers import *  # Relative import
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Logging Configuration
@@ -23,7 +24,6 @@ def test_payload(url, payload, method="GET"):
         if response.status_code == 200:
             content = response.text
             content_size = len(content)
-            # Check for file content or significant response size
             if ("root:x:" in content or "[fonts]" in content or content_size > 1000):
                 logging.info(ga.red + f"[*] Vulnerable! Payload: {payload}" + ga.end)
                 logging.info(ga.blue + f"[*] POC: {full_url}" + ga.end)
