@@ -1,9 +1,8 @@
 import re
 import logging
-from headers import *
+from filetool.Troy.troy.headers import *
 import requests
 import urllib.parse
-import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configure logging 
@@ -74,26 +73,3 @@ def xss_scan(url, payloads_file):
         logging.error(ga.red + f"[!] Payloads file '{payloads_file}' not found!"+ ga.end)
     except Exception as e:
         logging.error(ga.red + f"[!] Unexpected error: {e}"+ ga.end)
-
-# Create argument parser with a description
-parser = argparse.ArgumentParser(description="Advanced XSS Scanner")
-
-# Add required URL argument
-parser.add_argument(
-    "-u", "--url",
-    help="Target URL to scan (e.g., http://example.com?page=test&user=admin)",
-    required=True
-)
-
-# Add required payloads file argument
-parser.add_argument(
-    "-p", "--payloads",
-    help="File containing XSS payloads",
-    required=True
-)
-
-# Parse the arguments from the command line
-args = parser.parse_args()
-
-# Run the scanner with the provided URL and payloads file
-xss_scan(args.url, args.payloads)  # Fixed typo: args.payloads, not args.payload
