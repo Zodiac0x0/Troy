@@ -6,11 +6,11 @@ setup(
     description="A web application security scanner for XSS and Path Traversal",
     author="Omar Islam",
     url="https://github.com/Zodiac0x0/Troy",
-    packages=find_packages(),  
-    install_requires=["requests>=2.28.0"],
-    package_data= {
-        'troy' : ['payloads/*.txt']
+    packages=find_packages(),
+    package_data={
+        "troy": ["payloads/*.txt"],
     },
+    install_requires=["requests>=2.28.0", "colorama>=0.4.6"],
     entry_points={
         "console_scripts": [
             "troy = troy.Troy:main"
